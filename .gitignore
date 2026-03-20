@@ -4,3 +4,7 @@ dist/
 .DS_Store
 .env
 .env.*
+
+# FairPrice browser cookie export (auth_token, connect.sid, etc. — never commit)
+secrets/*
+!secrets/README.md
