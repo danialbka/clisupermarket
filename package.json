@@ -1,0 +1,33 @@
+{
+  "name": "clisupermarket",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danialbka/clisupermarket.git"
+  },
+  "type": "module",
+  "bin": {
+    "ss-live": "./dist/ss-live.js",
+    "fp-live": "./dist/fp-live.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "ss-live": "node dist/ss-live.js",
+    "fp-live": "node dist/fp-live.js"
+  },
+  "dependencies": {
+    "commander": "^13.1.0",
+    "ejson": "^2.2.3",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
