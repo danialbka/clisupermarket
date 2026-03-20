@@ -119,6 +119,44 @@ curl -fsS \
 
 - Node **20+** (global `fetch`).
 
+---
+
+## Health (`health`) — local calorie + weight log
+
+A **calendar-style** calorie log with an adjustable **daily kcal budget** (default + optional per-day overrides), plus a **weight** log with a configurable **weigh-in interval** (used to suggest when the next entry is due).
+
+Data is stored as JSON (default: `~/.config/clisupermarket/health.json`, or `XDG_CONFIG_HOME/clisupermarket/health.json`). Override with `--file <path>`.
+
+### Calories
+
+| Command | Purpose |
+|--------|---------|
+| `health cal set-limit <kcal>` | Default daily limit (applies to all days unless overridden) |
+| `health cal set-limit <kcal> -d YYYY-MM-DD` | Limit for **one day** only |
+| `health cal clear-limit YYYY-MM-DD` | Remove a day override (falls back to default) |
+| `health cal add <kcal> [-d YYYY-MM-DD] [-n note]` | Log a meal/snack |
+| `health cal day [-d YYYY-MM-DD]` | One-day summary vs limit |
+| `health cal month [YYYY-MM]` | Month grid: `day=total` (at/under limit) vs `day>total` (over) |
+
+### Weight
+
+| Command | Purpose |
+|--------|---------|
+| `health weight add <kg> [-d YYYY-MM-DD] [-n note]` | Log a weigh-in |
+| `health weight list [--json]` | All entries |
+| `health weight interval <days>` | How often you want to weigh in (e.g. `7` for weekly) |
+| `health weight status` | Last weight, days since, and “next due” hint |
+
+```bash
+npm run build
+node dist/health.js cal set-limit 2000
+node dist/health.js cal add 450 -n lunch
+node dist/health.js cal month
+node dist/health.js weight add 72.4
+node dist/health.js weight interval 7
+node dist/health.js weight status
+```
+
 ## Cursor agents
 
 See [`.cursor/skills/clisupermarket/SKILL.md`](.cursor/skills/clisupermarket/SKILL.md) for when and how to run `fp-live` / `ss-live`, flags, and extension points.
