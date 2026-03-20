@@ -65,9 +65,14 @@ node dist/ss-live.js --full --page-size 80 -o /tmp/ss.json
 - Respect each retailer’s **terms of use**, **robots.txt**, and **rate limits**. Prefer small delays (`--pause`) for Sheng Siong; avoid hammering FairPrice HTML.
 - Site markup or DDP method names **can change**; failures may need bundle or HTML inspection again.
 
-## FairPrice cookies (local only)
+## Session cookies (local only)
 
-Optional browser export JSON may live at **`secrets/fairprice-cookies.json`**. The whole `secrets/` tree is **gitignored** (except `secrets/README.md`). Do not commit or paste cookie files into issues or PRs; they contain `auth_token` / session material.
+Optional browser export JSON may live at:
+
+- **`secrets/fairprice-cookies.json`** — FairPrice (`auth_token`, `connect.sid`, …)
+- **`secrets/sheng-siong-cookies.json`** — Sheng Siong (`sess-key`, Incapsula/WAF cookies, …)
+
+The `secrets/` tree is **gitignored** (except `secrets/README.md`). Do not commit or paste cookie files into issues or PRs.
 
 ## Related files
 

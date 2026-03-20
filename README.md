@@ -62,6 +62,13 @@ Runtime API base (for reference only) appears in that JSON as `runtimeConfig.API
 
 See [`.cursor/skills/clisupermarket/SKILL.md`](.cursor/skills/clisupermarket/SKILL.md) for when and how to run `fp-live` / `ss-live`, flags, and extension points.
 
-## Optional: FairPrice session cookies
+## Optional: session cookies (gitignored)
 
-To keep a local browser cookie export for future authenticated tooling, save it as [`secrets/fairprice-cookies.json`](secrets/README.md). That path is **gitignored**; see [`secrets/README.md`](secrets/README.md). Never commit tokens.
+Store browser cookie exports under [`secrets/`](secrets/README.md) (same JSON shape as your exporter):
+
+| File | Store |
+|------|--------|
+| `secrets/fairprice-cookies.json` | FairPrice |
+| `secrets/sheng-siong-cookies.json` | Sheng Siong |
+
+The whole `secrets/` tree is ignored by git except `secrets/README.md`. Never commit tokens.
