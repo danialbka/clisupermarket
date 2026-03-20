@@ -1,4 +1,4 @@
-# grocerylistcli
+# clisupermarket
 
 Live grocery homepage data from two Singapore retailers, **separate CLIs** (different stacks and data shapes).
 
@@ -57,3 +57,7 @@ Runtime API base (for reference only) appears in that JSON as `runtimeConfig.API
 ## Requirements
 
 - Node **20+** (global `fetch`).
+
+## Cursor agents
+
+See [`.cursor/skills/clisupermarket/SKILL.md`](.cursor/skills/clisupermarket/SKILL.md) for when and how to run `fp-live` / `ss-live`, flags, and extension points.
