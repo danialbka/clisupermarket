@@ -27,14 +27,20 @@ export class ShengSiongDdpClient {
   constructor(
     private readonly endpoint = DEFAULT_WS,
     private readonly origin = DEFAULT_ORIGIN,
+    /** Optional `Cookie` header (e.g. `sess-key=...; visid_incap_...=...`) so `Sessions.*` methods match the browser session. */
+    private readonly cookieHeader?: string,
   ) {}
 
   async connect(): Promise<void> {
+    const headers: Record<string, string> = {
+      'User-Agent': 'Mozilla/5.0 (compatible; clisupermarket/0.1)',
+      Origin: this.origin,
+    };
+    if (this.cookieHeader) {
+      headers.Cookie = this.cookieHeader;
+    }
     this.ws = new WebSocket(this.endpoint, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; clisupermarket/0.1)',
-        Origin: this.origin,
-      },
+      headers,
     });
 
     await new Promise<void>((resolve, reject) => {
@@ -135,7 +141,58 @@ export class ShengSiongDdpClient {
     ]);
     return asArray<SsProduct>(raw);
   }
+
+  /**
+   * Product detail / PDP — args match the web app: `(slugOrId, filterBundle | null, searchFilter)`.
+   */
+  async getProductOneByIdOrSlug(
+    slugOrId: string | { $type: string; $value: string },
+    filterBundle: unknown,
+    searchFilter: unknown,
+  ): Promise<SsProduct | null> {
+    return await this.call<SsProduct | null>('Products.getOneByIdOrSlug', [slugOrId, filterBundle, searchFilter]);
+  }
+
+  /** Server-side session blob (cart, checkout, search history) keyed by `sess-key` cookie. */
+  async getSessionDataByKey(sessionKey: string): Promise<SsSessionData | null> {
+    return await this.call<SsSessionData | null>('Sessions.getSessionDataByKey', [{ sessionKey }]);
+  }
+
+  /** Persists cart/checkout/search — same as the Redux `CART/UPDATE_SESSION` saga (`dataSets` shape). */
+  async updateSessionData(sessionKey: string, dataSets: SsSessionDataPatch): Promise<unknown> {
+    return await this.call('Sessions.updateData', [{ sessionKey, dataSets }]);
+  }
+
+  /** Creates a new anonymous session; returns the new `sess-key` value. */
+  async createSession(): Promise<string> {
+    return await this.call<string>('Sessions.create', []);
+  }
+
+  async getLoggedInUserCartItemsTotal(): Promise<unknown> {
+    return await this.call('Sessions.getLoggedInUserCartItemsTotal', []);
+  }
 }
+
+/** `Sessions.getSessionDataByKey` / `Sessions.updateData` payload shape (partial). */
+export type SsSessionData = {
+  cart?: { items?: SsCartLine[] };
+  search?: { history?: unknown[] };
+  checkout?: Record<string, unknown>;
+};
+
+export type SsSessionDataPatch = {
+  cart?: { items: SsCartLine[] };
+  search?: { history: unknown[] };
+  checkout?: Record<string, unknown>;
+};
+
+/** Cart line as stored in session (full product doc + `qty` + limits). */
+export type SsCartLine = Record<string, unknown> & {
+  id?: string;
+  _id?: unknown;
+  qty?: number;
+  dailyPurchaseLimit?: number;
+};
 
 /**
  * Fetch every product for a top-level category slug (e.g. `vegetables`).
@@ -204,6 +261,9 @@ export function filterBundleForCategorySlugs(categorySlugs: string[]) {
     searchFilter: { slug: '', category: { slug: '' } },
   };
 }
+
+/** Matches `filterState.search` defaults used with `Products.getOneByIdOrSlug` on the PDP. */
+export const defaultSearchFilter = () => ({ slug: '', category: { slug: '' } });
 
 export type SsCategoryDoc = {
   _id?: string;

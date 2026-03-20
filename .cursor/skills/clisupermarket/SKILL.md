@@ -30,6 +30,8 @@ Requires **Node 20+** (`fetch` for FairPrice; `ws` + `ejson` for Sheng Siong). B
 |------|---------|-----------|
 | FairPrice homepage rails (banners, product swimlanes, categories, promos) | `node dist/fp-live.js` | HTTP GET → parse `<script id="__NEXT_DATA__">` |
 | Sheng Siong homepage sections + products | `node dist/ss-live.js` | WebSocket DDP → `wss://shengsiong.com.sg/websocket` |
+| **FairPrice cart** (list / remove / clear / add / set qty) | `node dist/cart.js fp …` | Cookie auth → `GET`/`DELETE`/`POST` `https://website-api.omni.fairprice.com.sg/api/cart` |
+| **Sheng Siong cart** | `node dist/cart.js ss …` | DDP + `Cookie` header → `Sessions.getSessionDataByKey` / `Sessions.updateData` / `Products.getOneByIdOrSlug`; optional **`SS_SESSION_KEY`** when `sess-key` rotates |
 
 ## FairPrice — `fp-live`
 
@@ -74,9 +76,17 @@ Optional browser export JSON may live at:
 
 The `secrets/` tree is **gitignored** (except `secrets/README.md`). Do not commit or paste cookie files into issues or PRs.
 
+### FairPrice cart (`cart fp …`)
+
+- **Requires** a valid FairPrice cookie file; default path `secrets/fairprice-cookies.json`, or `-c <path>` / **`FAIRPRICE_COOKIES`**.
+- **Reliable:** `cart fp list`, `cart fp remove <itemId>`, `cart fp clear` (uses `GET` + `DELETE` with `storeId` + `itemId` query params).
+- **Add / set qty:** `cart fp add` and `cart fp set` POST the **merged cart** body the site uses (`{ storeId, cart: { items: [{ id, q, t }, ...] } }`), not `{ productId, quantity }` alone. **Exit code 2** only if the fingerprint still does not change after POST.
+- **Safety:** commands **change the real online cart**; use only with explicit user consent.
+
 ## Related files
 
 - `README.md` — human-oriented overview and examples
 - `secrets/README.md` — where to put `fairprice-cookies.json`
 - `src/fairpriceNextData.ts`, `src/fp-live.ts`
-- `src/shengSiongDdp.ts`, `src/ss-live.ts`
+- `src/fairpriceSession.ts`, `src/fairpriceCartApi.ts`, `src/cart.ts`
+- `src/shengSiongDdp.ts`, `src/shengSiongSession.ts`, `src/shengSiongCartApi.ts`, `src/ss-live.ts`

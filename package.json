@@ -10,12 +10,14 @@
   "type": "module",
   "bin": {
     "ss-live": "./dist/ss-live.js",
-    "fp-live": "./dist/fp-live.js"
+    "fp-live": "./dist/fp-live.js",
+    "cart": "./dist/cart.js"
   },
   "scripts": {
     "build": "tsc",
     "ss-live": "node dist/ss-live.js",
-    "fp-live": "node dist/fp-live.js"
+    "fp-live": "node dist/fp-live.js",
+    "cart": "node dist/cart.js"
   },
   "dependencies": {
     "commander": "^13.1.0",

@@ -6,6 +6,7 @@ Live grocery homepage data from two Singapore retailers, **separate CLIs** (diff
 |-----------|--------------|-----------|
 | **`ss-live`** | [Sheng Siong](https://shengsiong.com.sg/) | Meteor **DDP** over `wss://shengsiong.com.sg/websocket` |
 | **`fp-live`** | [FairPrice](https://www.fairprice.com.sg/) | Next.js **`__NEXT_DATA__`** JSON embedded in HTML |
+| **`cart`** | FairPrice (and SS stub) | Authenticated **`website-api.omni.fairprice.com.sg`** cart HTTP (see below) |
 
 **Caveat:** Respect each site’s terms, robots policy, and rate limits. Use for personal tooling, not aggressive scraping.
 
@@ -51,6 +52,66 @@ node dist/fp-live.js -u 'https://www.fairprice.com.sg/' -o ./out/fairprice-home.
 ```
 
 Runtime API base (for reference only) appears in that JSON as `runtimeConfig.API_URL` → `https://website-api.omni.fairprice.com.sg/api` when you parse the full `__NEXT_DATA__` yourself.
+
+---
+
+## Cart (`cart`) — FairPrice session required
+
+Uses a **logged-in** cookie export (same JSON as `secrets/fairprice-cookies.json`). **Mutates your real cart** on FairPrice; treat like production.
+
+| Subcommand | API | Notes |
+|------------|-----|--------|
+| `cart fp list` | `GET /api/cart` | Table of lines; `--json` prints raw `items` |
+| `cart fp remove <itemId>` | `DELETE /api/cart?storeId=&itemId=` | Line id from `list` |
+| `cart fp clear` | Loops `DELETE` | Empties the cart |
+| `cart fp add <productId> [qty]` | `POST /api/cart` | Merges into current cart using the **web app** shape: `{ storeId, cart: { items: [{ id, q, t }, ...] } }` (see `buildMergeCartPostBody` in source) |
+| `cart fp set <itemId> <qty>` | `POST /api/cart` or `DELETE` if qty `0` | Same merge POST with updated `q`; **exits 2** if unchanged |
+
+```bash
+npm run build
+node dist/cart.js fp list
+node dist/cart.js fp list --json
+node dist/cart.js fp add 1544421 2
+node dist/cart.js fp set <itemId> 3
+node dist/cart.js fp remove <itemId>
+```
+
+Override cookie path: `-c path/to/fairprice-cookies.json` or env **`FAIRPRICE_COOKIES`**.
+
+### Sheng Siong (`cart ss`)
+
+The site stores the cart in **Meteor session** data, not a separate REST cart API. The web app syncs Redux → **`Sessions.updateData`** with `{ sessionKey, dataSets: { cart: { items } } }` (see `sessionSaga.js` in their bundle). The DDP client sends the **`Cookie`** header (including **`sess-key`**) on the WebSocket handshake.
+
+| Subcommand | DDP | Notes |
+|------------|-----|--------|
+| `cart ss list` | `Sessions.getSessionDataByKey` | Needs a **valid** `sess-key` (or **`SS_SESSION_KEY`** env). Stale browser exports often return no data until you add again. |
+| `cart ss add <slug> [qty]` | `Products.getOneByIdOrSlug` + `Sessions.updateData` | Slug is the product URL segment. If `sess-key` is rejected (`Invalid checkout session`), the CLI creates a **new** session and prints the new key — set **`SS_SESSION_KEY`** or update your cookie file. |
+| `cart ss remove <id>` | `Sessions.updateData` | `id` is the hex string from `ss list` (same as Mongo product `_id`). |
+| `cart ss clear` | `Sessions.updateData` | Clears `cart.items`. |
+| `cart ss create-session` | `Sessions.create` | Prints a fresh `sess-key` value. |
+
+```bash
+node dist/cart.js ss list
+SS_SESSION_KEY='<paste from ss add>' node dist/cart.js ss list
+node dist/cart.js ss add zenxin-organic-malaysia-baby-spinach-mix-80-g 2
+```
+
+Cookie path: `-c` or **`SHENG_SIONG_COOKIES`**. Session override: **`SS_SESSION_KEY`** (wins over `sess-key` in the JSON).
+
+### FairPrice cart over `curl`
+
+The same cookie export works with plain **`curl`** if you build the `Cookie` and `Authorization` headers. Below uses **`jq`** (install on Debian/Ubuntu: `apt install jq`). If you prefer not to use `jq`, run **`node dist/cart.js fp list`** instead.
+
+```bash
+COOKIE_FILE="${FAIRPRICE_COOKIES:-secrets/fairprice-cookies.json}"
+COOKIE_HDR=$(jq -r '.cookies | map(.name + "=" + .value) | join("; ")' "$COOKIE_FILE")
+TOKEN=$(jq -r '.cookies[] | select(.name == "auth_token") | .value' "$COOKIE_FILE")
+curl -fsS \
+  -H "Accept: application/json" \
+  -H "Cookie: $COOKIE_HDR" \
+  -H "Authorization: Bearer $TOKEN" \
+  "https://website-api.omni.fairprice.com.sg/api/cart" | jq .
+```
 
 ---
 
